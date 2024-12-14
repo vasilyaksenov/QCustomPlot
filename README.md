@@ -4,3 +4,26 @@ QCustomPlot is a Qt C++ widget for plotting and data visualization. It has no fu
 Author: Emanuel Eichhammer
 
 QCustomPLot is under default license GPL, feel free to use QCP in free software! Visit https://www.qcustomplot.com for commertial license and more information!
+
+# Screenshots
+![advancedaxesdemo](screenshots/advancedaxesdemo.png)
+![barchartdemo](screenshots/barchartdemo.png)
+![colormapdemo](screenshots/colormapdemo.png)
+![datedemo](screenshots/datedemo.png)
+![financialchartsdemo](screenshots/financialchartsdemo.png)
+![itemdemo](screenshots/itemdemo.png)
+![linestyledemo](screenshots/linestyledemo.png)
+![logarithmicdemo](screenshots/logarithmicdemo.png)
+![multiaxisdemo](screenshots/multiaxisdemo.png)
+![parametriccurvesdemo](screenshots/parametriccurvesdemo.png)
+![polarchartsdemo](screenshots/polarchartsdemo.png)
+![quadraticdemo](screenshots/quadraticdemo.png)
+![realtimedatademo](screenshots/realtimedatademo.png)
+![scatterpixmapdemo](screenshots/scatterpixmapdemo.png)
+![scatterstyledemo](screenshots/scatterstyledemo.png)
+![simpledemo](screenshots/simpledemo.png)
+![simpleitemdemo](screenshots/simpleitemdemo.png)
+![sincscatterdemo](screenshots/sincscatterdemo.png)
+![statisticaldemo](screenshots/statisticaldemo.png)
+![styleddemo](screenshots/styleddemo.png)
+![texturebrushdemo](screenshots/texturebrushdemo.png)

@@ -1,7 +1,7 @@
 /***************************************************************************
 **                                                                        **
 **  QCustomPlot, an easy to use, modern plotting widget for Qt            **
-**  Copyright (C) 2011-2018 Emanuel Eichhammer                            **
+**  Copyright (C) 2011-2022 Emanuel Eichhammer                            **
 **                                                                        **
 **  This program is free software: you can redistribute it and/or modify  **
 **  it under the terms of the GNU General Public License as published by  **
@@ -18,9 +18,9 @@
 **                                                                        **
 ****************************************************************************
 **           Author: Emanuel Eichhammer                                   **
-**  Website/Contact: http://www.qcustomplot.com/                          **
-**             Date: 25.06.18                                             **
-**          Version: 2.0.1                                                **
+**  Website/Contact: https://www.qcustomplot.com/                         **
+**             Date: 06.11.22                                             **
+**          Version: 2.1.1                                                **
 ****************************************************************************/
 
 /************************************************************************************************************
@@ -44,7 +44,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
-#include "../../qcustomplot.h" // the header file of QCustomPlot. Don't forget to add it to your project, if you use an IDE, so it gets compiled.
+#include "qcustomplot.h" // the header file of QCustomPlot. Don't forget to add it to your project, if you use an IDE, so it gets compiled.
 
 namespace Ui {
 class MainWindow;
@@ -79,9 +79,13 @@ public:
   void setupAdvancedAxesDemo(QCustomPlot *customPlot);
   void setupColorMapDemo(QCustomPlot *customPlot);
   void setupFinancialDemo(QCustomPlot *customPlot);
+  void setupPolarPlotDemo(QCustomPlot *customPlot);
   
   void setupPlayground(QCustomPlot *customPlot);
   
+protected: 
+  void keyPressEvent(QKeyEvent *event) override;
+
 private slots:
   void realtimeDataSlot();
   void bracketDataSlot();

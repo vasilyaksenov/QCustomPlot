@@ -1,7 +1,7 @@
 /***************************************************************************
 **                                                                        **
 **  QCustomPlot, an easy to use, modern plotting widget for Qt            **
-**  Copyright (C) 2011-2018 Emanuel Eichhammer                            **
+**  Copyright (C) 2011-2022 Emanuel Eichhammer                            **
 **                                                                        **
 **  This program is free software: you can redistribute it and/or modify  **
 **  it under the terms of the GNU General Public License as published by  **
@@ -18,9 +18,9 @@
 **                                                                        **
 ****************************************************************************
 **           Author: Emanuel Eichhammer                                   **
-**  Website/Contact: http://www.qcustomplot.com/                          **
-**             Date: 25.06.18                                             **
-**          Version: 2.0.1                                                **
+**  Website/Contact: https://www.qcustomplot.com/                         **
+**             Date: 06.11.22                                             **
+**          Version: 2.1.1                                                **
 ****************************************************************************/
 
 /************************************************************************************************************
@@ -42,7 +42,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
-#include <QDesktopWidget>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#  include <QDesktopWidget>
+#endif
 #include <QScreen>
 #include <QMessageBox>
 #include <QMetaEnum>
@@ -76,10 +78,45 @@ MainWindow::MainWindow(QWidget *parent) :
   // 17: setupAdvancedAxesDemo(ui->customPlot);
   // 18: setupColorMapDemo(ui->customPlot);
   // 19: setupFinancialDemo(ui->customPlot);
-  
+  // 20: setupPolarPlotDemo(ui->customPlot);
+    
   // for making screenshots of the current demo or all demos (for website screenshots):
   //QTimer::singleShot(1500, this, SLOT(allScreenShots()));
   //QTimer::singleShot(4000, this, SLOT(screenShot()));
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+  auto change_tab = [this](int change){
+    int MAX_TAB = 20;
+    auto _tab = currentDemoIndex + change;
+    if(_tab <0) _tab = MAX_TAB;
+    if(_tab > MAX_TAB) _tab = 0;
+
+    if (dataTimer.isActive())
+      dataTimer.stop();
+    dataTimer.disconnect();
+    delete ui->customPlot;
+    ui->customPlot = new QCustomPlot(ui->centralWidget);
+    ui->verticalLayout->addWidget(ui->customPlot);
+    setupDemo(_tab);
+  };
+
+  if (event->key() == Qt::Key_Left) {
+      qDebug() << "MINUS";
+      change_tab(-1);
+  } else if (event->key() == Qt::Key_Right) {
+      qDebug() << "PLUS";
+      change_tab(+1);
+  } else if (event->key() == Qt::Key_F3) {
+      qDebug() << "screenShot";
+      screenShot();
+  } else if (event->key() == Qt::Key_F4) {
+      qDebug() << "all screenShot";
+      allScreenShots();
+  } else {
+      QWidget::keyPressEvent(event);
+  }
 }
 
 void MainWindow::setupDemo(int demoIndex)
@@ -106,6 +143,7 @@ void MainWindow::setupDemo(int demoIndex)
     case 17: setupAdvancedAxesDemo(ui->customPlot); break;
     case 18: setupColorMapDemo(ui->customPlot); break;
     case 19: setupFinancialDemo(ui->customPlot); break;
+    case 20: setupPolarPlotDemo(ui->customPlot); break;
   }
   setWindowTitle("QCustomPlot: "+demoName);
   statusBar()->clearMessage();
@@ -203,6 +241,7 @@ void MainWindow::setupSincScatterDemo(QCustomPlot *customPlot)
   // add data point graph:
   customPlot->addGraph();
   customPlot->graph(3)->setPen(QPen(Qt::blue));
+  customPlot->graph(3)->setName("Measurement");
   customPlot->graph(3)->setLineStyle(QCPGraph::lsNone);
   customPlot->graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCross, 4));
   // add error bars:
@@ -211,7 +250,6 @@ void MainWindow::setupSincScatterDemo(QCustomPlot *customPlot)
   errorBars->setAntialiased(false);
   errorBars->setDataPlottable(customPlot->graph(3));
   errorBars->setPen(QPen(QColor(180,180,180)));
-  customPlot->graph(3)->setName("Measurement");
 
   // generate ideal sinc curve data and some randomly perturbed data for scatter plot:
   QVector<double> x0(250), y0(250);
@@ -361,7 +399,7 @@ void MainWindow::setupLineStyleDemo(QCustomPlot *customPlot)
 void MainWindow::setupScatterPixmapDemo(QCustomPlot *customPlot)
 {
   demoName = "Scatter Pixmap Demo";
-  customPlot->axisRect()->setBackground(QPixmap("./solarpanels.jpg"));
+  customPlot->axisRect()->setBackground(QPixmap(":/solarpanels.jpg"));
   customPlot->addGraph();
   customPlot->graph()->setLineStyle(QCPGraph::lsLine);
   QPen pen;
@@ -370,7 +408,7 @@ void MainWindow::setupScatterPixmapDemo(QCustomPlot *customPlot)
   pen.setWidthF(2.5);
   customPlot->graph()->setPen(pen);
   customPlot->graph()->setBrush(QBrush(QColor(255,200,20,70)));
-  customPlot->graph()->setScatterStyle(QCPScatterStyle(QPixmap("./sun.png")));
+  customPlot->graph()->setScatterStyle(QCPScatterStyle(QPixmap(":/sun.png")));
   // set graph name, will show up in legend next to icon:
   customPlot->graph()->setName("Data from Photovoltaic\nenergy barometer 2011");
   // set data:
@@ -408,7 +446,7 @@ void MainWindow::setupDateDemo(QCustomPlot *customPlot)
   // set locale to english, so we get english month names:
   customPlot->setLocale(QLocale(QLocale::English, QLocale::UnitedKingdom));
   // seconds of current time, we'll use it as starting point in time for data:
-  double now = QDateTime::currentDateTime().toTime_t();
+  double now = QDateTime::currentDateTime().toMSecsSinceEpoch()/1000.0;
   srand(8); // set the random seed, so we always get the same random data
   // create multiple graphs:
   for (int gi=0; gi<5; ++gi)
@@ -470,7 +508,7 @@ void MainWindow::setupTextureBrushDemo(QCustomPlot *customPlot)
   redDotPen.setColor(QColor(170, 100, 100, 180));
   redDotPen.setWidthF(2);
   customPlot->graph(0)->setPen(redDotPen);
-  customPlot->graph(0)->setBrush(QBrush(QPixmap("./balboa.jpg"))); // fill with texture of specified image
+  customPlot->graph(0)->setBrush(QBrush(QPixmap(":/balboa.jpg"))); // fill with texture of specified image
   
   customPlot->addGraph();
   customPlot->graph(1)->setPen(QPen(Qt::red));
@@ -523,7 +561,7 @@ void MainWindow::setupMultiAxisDemo(QCustomPlot *customPlot)
   // will contain left maxwell-like function
   customPlot->addGraph(customPlot->yAxis, customPlot->xAxis);
   customPlot->graph(0)->setPen(QPen(QColor(255, 100, 0)));
-  customPlot->graph(0)->setBrush(QBrush(QPixmap("./balboa.jpg"))); // fill with texture of specified image
+  customPlot->graph(0)->setBrush(QBrush(QPixmap(":/balboa.jpg"))); // fill with texture of specified image
   customPlot->graph(0)->setLineStyle(QCPGraph::lsLine);
   customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
   customPlot->graph(0)->setName("Left maxwell function");
@@ -532,7 +570,7 @@ void MainWindow::setupMultiAxisDemo(QCustomPlot *customPlot)
   // will contain bottom maxwell-like function with error bars
   customPlot->addGraph();
   customPlot->graph(1)->setPen(QPen(Qt::red));
-  customPlot->graph(1)->setBrush(QBrush(QPixmap("./balboa.jpg"))); // same fill as we used for graph 0
+  customPlot->graph(1)->setBrush(QBrush(QPixmap(":/balboa.jpg"))); // same fill as we used for graph 0
   customPlot->graph(1)->setLineStyle(QCPGraph::lsStepCenter);
   customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, Qt::red, Qt::white, 7));
   customPlot->graph(1)->setName("Bottom maxwell function");
@@ -1055,7 +1093,7 @@ void MainWindow::setupStyledDemo(QCustomPlot *customPlot)
   for (int i=0; i<x3.size(); ++i)
   {
     x3[i] = i/(double)(x3.size()-1)*10;
-    y3[i] = 0.05+3*(0.5+qCos(x3[i]*x3[i]*0.2+2)*0.5)/(double)(x3[i]+0.7)+qrand()/(double)RAND_MAX*0.01;
+    y3[i] = 0.05+3*(0.5+qCos(x3[i]*x3[i]*0.2+2)*0.5)/(double)(x3[i]+0.7)+std::rand()/(double)RAND_MAX*0.01;
   }
   for (int i=0; i<x4.size(); ++i)
   {
@@ -1177,7 +1215,7 @@ void MainWindow::setupAdvancedAxesDemo(QCustomPlot *customPlot)
   // prepare data:
   QVector<QCPGraphData> dataCos(21), dataGauss(50), dataRandom(100);
   QVector<double> x3, y3;
-  qsrand(3);
+  std::srand(3);
   for (int i=0; i<dataCos.size(); ++i)
   {
     dataCos[i].key = i/(double)(dataCos.size()-1)*10-5.0;
@@ -1191,7 +1229,7 @@ void MainWindow::setupAdvancedAxesDemo(QCustomPlot *customPlot)
   for (int i=0; i<dataRandom.size(); ++i)
   {
     dataRandom[i].key = i/(double)dataRandom.size()*10;
-    dataRandom[i].value = qrand()/(double)RAND_MAX-0.5+dataRandom[qMax(0, i-1)].value;
+    dataRandom[i].value = std::rand()/(double)RAND_MAX-0.5+dataRandom[qMax(0, i-1)].value;
   }
   x3 << 1 << 2 << 3 << 4;
   y3 << 2 << 2.5 << 4 << 1.5;
@@ -1295,19 +1333,19 @@ void MainWindow::setupFinancialDemo(QCustomPlot *customPlot)
   // generate two sets of random walk data (one for candlestick and one for ohlc chart):
   int n = 500;
   QVector<double> time(n), value1(n), value2(n);
-  QDateTime start = QDateTime(QDate(2014, 6, 11));
+  QDateTime start(QDate(2014, 6, 11), QTime(0, 0));
   start.setTimeSpec(Qt::UTC);
-  double startTime = start.toTime_t();
+  double startTime = start.toMSecsSinceEpoch()/1000.0;
   double binSize = 3600*24; // bin data in 1 day intervals
   time[0] = startTime;
   value1[0] = 60;
   value2[0] = 20;
-  qsrand(9);
+  std::srand(9);
   for (int i=1; i<n; ++i)
   {
     time[i] = startTime + 3600*i;
-    value1[i] = value1[i-1] + (qrand()/(double)RAND_MAX-0.5)*10;
-    value2[i] = value2[i-1] + (qrand()/(double)RAND_MAX-0.5)*3;
+    value1[i] = value1[i-1] + (std::rand()/(double)RAND_MAX-0.5)*10;
+    value2[i] = value2[i-1] + (std::rand()/(double)RAND_MAX-0.5)*3;
   }
   
   // create candlestick chart:
@@ -1346,7 +1384,7 @@ void MainWindow::setupFinancialDemo(QCustomPlot *customPlot)
   QCPBars *volumeNeg = new QCPBars(volumeAxisRect->axis(QCPAxis::atBottom), volumeAxisRect->axis(QCPAxis::atLeft));
   for (int i=0; i<n/5; ++i)
   {
-    int v = qrand()%20000+qrand()%20000+qrand()%20000-10000*3;
+    int v = std::rand()%20000+std::rand()%20000+std::rand()%20000-10000*3;
     (v < 0 ? volumeNeg : volumePos)->addData(startTime+3600*5.0*i, qAbs(v)); // add data to either volumeNeg or volumePos, depending on sign of v
   }
   volumePos->setWidth(3600*4);
@@ -1379,17 +1417,57 @@ void MainWindow::setupFinancialDemo(QCustomPlot *customPlot)
   volumeAxisRect->setMarginGroup(QCP::msLeft|QCP::msRight, group);
 }
 
+void MainWindow::setupPolarPlotDemo(QCustomPlot *customPlot)
+{
+  // Warning: Polar plots are a still a tech preview
+  
+  demoName = "Polar Charts Demo";
+
+  customPlot->plotLayout()->clear();
+  QCPPolarAxisAngular *angularAxis = new QCPPolarAxisAngular(customPlot);
+  customPlot->plotLayout()->addElement(0, 0, angularAxis);
+  /* This is how we could set the angular axis to show pi symbols instead of degree numbers:
+  QSharedPointer<QCPAxisTickerPi> ticker(new QCPAxisTickerPi);
+  ticker->setPiValue(180);
+  ticker->setTickCount(8);
+  polarAxis->setTicker(ticker);
+  */
+  customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+  angularAxis->setRangeDrag(false);
+  angularAxis->setTickLabelMode(QCPPolarAxisAngular::lmUpright);
+  
+  angularAxis->radialAxis()->setTickLabelMode(QCPPolarAxisRadial::lmUpright);
+  angularAxis->radialAxis()->setTickLabelRotation(0);
+  angularAxis->radialAxis()->setAngle(45);
+  
+  angularAxis->grid()->setAngularPen(QPen(QColor(200, 200, 200), 0, Qt::SolidLine));
+  angularAxis->grid()->setSubGridType(QCPPolarGrid::gtAll);
+  
+  QCPPolarGraph *g1 = new QCPPolarGraph(angularAxis, angularAxis->radialAxis());
+  QCPPolarGraph *g2 = new QCPPolarGraph(angularAxis, angularAxis->radialAxis());
+  g2->setPen(QPen(QColor(255, 150, 20)));
+  g2->setBrush(QColor(255, 150, 20, 50));
+  g1->setScatterStyle(QCPScatterStyle::ssDisc);
+  for (int i=0; i<100; ++i)
+  {
+    g1->addData(i/100.0*360.0, qSin(i/100.0*M_PI*8)*8+1);
+    g2->addData(i/100.0*360.0, qSin(i/100.0*M_PI*6)*2);
+  }
+  angularAxis->setRange(0, 360);
+  angularAxis->radialAxis()->setRange(-10, 10);
+}
+
 void MainWindow::realtimeDataSlot()
 {
-  static QTime time(QTime::currentTime());
+  static QTime timeStart = QTime::currentTime();
   // calculate two new data points:
-  double key = time.elapsed()/1000.0; // time elapsed since start of demo, in seconds
+  double key = timeStart.msecsTo(QTime::currentTime())/1000.0; // time elapsed since start of demo, in seconds
   static double lastPointKey = 0;
   if (key-lastPointKey > 0.002) // at most add point every 2 ms
   {
     // add data to lines:
-    ui->customPlot->graph(0)->addData(key, qSin(key)+qrand()/(double)RAND_MAX*1*qSin(key/0.3843));
-    ui->customPlot->graph(1)->addData(key, qCos(key)+qrand()/(double)RAND_MAX*0.5*qSin(key/0.4364));
+    ui->customPlot->graph(0)->addData(key, qSin(key)+std::rand()/(double)RAND_MAX*1*qSin(key/0.3843));
+    ui->customPlot->graph(1)->addData(key, qCos(key)+std::rand()/(double)RAND_MAX*0.5*qSin(key/0.4364));
     // rescale value (vertical) axis to fit the current data:
     //ui->customPlot->graph(0)->rescaleValueAxis();
     //ui->customPlot->graph(1)->rescaleValueAxis(true);
@@ -1468,11 +1546,18 @@ void MainWindow::screenShot()
   QPixmap pm = QPixmap::grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);
 #elif QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
   QPixmap pm = qApp->primaryScreen()->grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);
-#else
+#elif QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QPixmap pm = qApp->primaryScreen()->grabWindow(qApp->desktop()->winId(), this->x()-7, this->y()-7, this->frameGeometry().width()+14, this->frameGeometry().height()+14);
+#else
+  QPixmap pm = qApp->primaryScreen()->grabWindow(0, this->x()-7, this->y()-7, this->frameGeometry().width()+14, this->frameGeometry().height()+14);
 #endif
   QString fileName = demoName.toLower()+".png";
   fileName.replace(" ", "");
+  
+  QString folderPath = "./screenshots/"; 
+  QDir dir;
+  if (!dir.exists(folderPath)) dir.mkpath(folderPath);
+
   pm.save("./screenshots/"+fileName);
   qApp->quit();
 }
@@ -1483,8 +1568,10 @@ void MainWindow::allScreenShots()
   QPixmap pm = QPixmap::grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);
 #elif QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
   QPixmap pm = qApp->primaryScreen()->grabWindow(qApp->desktop()->winId(), this->x()+2, this->y()+2, this->frameGeometry().width()-4, this->frameGeometry().height()-4);
-#else
+#elif QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QPixmap pm = qApp->primaryScreen()->grabWindow(qApp->desktop()->winId(), this->x()-7, this->y()-7, this->frameGeometry().width()+14, this->frameGeometry().height()+14);
+#else
+  QPixmap pm = qApp->primaryScreen()->grabWindow(0, this->x()-7, this->y()-7, this->frameGeometry().width()+14, this->frameGeometry().height()+14);
 #endif
   QString fileName = demoName.toLower()+".png";
   fileName.replace(" ", "");
